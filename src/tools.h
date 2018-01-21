@@ -36,11 +36,14 @@ public:
 
   /**
   * A helper method to convert from cartesian to polar coordinates.
+  * Using a base polar cordinate to make sure than the angle has a radial distance
+  * not greather than PI radians with respect to this one.
   */
   VectorXd ConvertFromCartesianToPolar(const VectorXd& cartesian, const VectorXd& polar_base);
 
   /**
-  * Normalizes and angle
+  * Normalizes and angle with respect to a base angle,
+  * to avoid that the radial distance to the base one is greather than PI radians.
   */
   float NormalizeAngle(const float& angle, const float& base_angle);
 };

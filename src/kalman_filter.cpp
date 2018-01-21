@@ -1,7 +1,9 @@
 #include "kalman_filter.h"
+#include <iostream>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using namespace std;
 
 // Please note that the Eigen library does not initialize
 // VectorXd or MatrixXd objects with zeros upon creation.
@@ -35,9 +37,14 @@ void KalmanFilter::Update(const VectorXd &z) {
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
-  VectorXd y = z - tools.ConvertFromCartesianToPolar(x_, z);
-  MatrixXd Hj = tools.CalculateJacobian(x_);
-  DoMeasurementUpdate(y, Hj, R_radar_);
+  try {
+      VectorXd y = z - tools.ConvertFromCartesianToPolar(x_, z);
+      MatrixXd Hj = tools.CalculateJacobian(x_);
+      DoMeasurementUpdate(y, Hj, R_radar_);
+    } catch (const char* error) {
+      // Catching division by zero exceptions to skip this steep
+      cerr << error << endl;
+    }
 }
 
 void KalmanFilter::DoMeasurementUpdate(const VectorXd &y, const MatrixXd &H, const MatrixXd &R) {

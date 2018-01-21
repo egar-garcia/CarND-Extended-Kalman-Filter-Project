@@ -13,15 +13,17 @@ Tools::~Tools() {}
 VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
                               const vector<VectorXd> &ground_truth) {
   VectorXd rmse(4);
-  rmse << 0,0,0,0;
 
   // Checking the validity of the following inputs:
   //  * The estimation vector size should not be zero
   //  * The estimation vector size should equal ground truth vector size
   if (estimations.size() == 0 || estimations.size() != ground_truth.size()) {
-    cout << "Invalid estimation or ground_truth data" << endl;
+    cerr << "Invalid estimation or ground_truth data" << endl;
+    rmse << -1, -1, -1, -1; // -1 to indicate an undefined value
     return rmse;
   }
+
+  rmse << 0, 0, 0, 0;
 
   // Accumulating squared residuals
   for(unsigned int i=0; i < estimations.size(); ++i) {
@@ -33,10 +35,9 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
   // Calculating the mean
   rmse = rmse / estimations.size();
 
-  //calculate the squared root
+  // Calculating the squared root
   rmse = rmse.array().sqrt();
 
-  //return the result
   return rmse;
 }
 
@@ -55,12 +56,9 @@ MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {
   float c3 = (c1 * c2);
 
   // Checking division by zero
-  /*
-  if(fabs(c1) < 0.0001) {
-	  cout << "CalculateJacobian () - Error - Division by Zero" << endl;
-	  return Hj;
+  if (c1 < 0.0001) {
+    throw "CalculateJacobian () - Error - Division by Zero";
   }
-  */
 
   // Computing the Jacobian matrix
   Hj << (px / c2), (py / c2), 0, 0,
@@ -89,20 +87,16 @@ VectorXd Tools::ConvertFromCartesianToPolar(const VectorXd& cartesian, const Vec
   float vy = cartesian[3];
 
   float rho = sqrt(px * px + py * py);
-  float phi = NormalizeAngle(atan2(py, px), polar_base[1]);
-  float rho_dot = (px * vx + py * vy) / rho;
 
-  /*
-  if (rho == 0) {
-    rho_dot = 0;
-  } else {
-    rho_dot = (px * vx + py * vy) / rho;
+  // Checking division by zero
+  if (rho < 0.0001) {
+    throw "ConvertFromCartesianToPolar () - Error - Division by Zero";
   }
-  */
 
   VectorXd polar(3);
-  // Converting the polar coordinates to cartesian
-  polar << rho, phi, rho_dot;
+  polar << rho,
+           NormalizeAngle(atan2(py, px), polar_base[1]),
+           (px * vx + py * vy) / rho;
 
   return polar;
 }
@@ -110,9 +104,13 @@ VectorXd Tools::ConvertFromCartesianToPolar(const VectorXd& cartesian, const Vec
 float Tools::NormalizeAngle(const float& angle, const float& base_angle) {
   float norm_angle = angle;
 
+  // Reducing the angle by 2*PI (a full lap) incremeps
+  // if radial distance from angle to base angle is bigger than pi
   while (norm_angle - base_angle > M_PI) {
     norm_angle -= 2 * M_PI;
   }
+  // Augmenting the angle by 2*PI (a full lap) increments
+  // if radial distance from base angle to angle is bigger than pi
   while (base_angle - norm_angle > M_PI) {
     norm_angle += 2 * M_PI;
   }
