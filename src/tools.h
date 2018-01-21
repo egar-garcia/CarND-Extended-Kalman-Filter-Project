@@ -32,7 +32,17 @@ public:
   /**
   * A helper method to convert from polar to cartesian coordinates.
   */
-  VectorXd ConverFromPolarToCartesian(const VectorXd& polar);
+  VectorXd ConvertFromPolarToCartesian(const VectorXd& polar);
+
+  /**
+  * A helper method to convert from cartesian to polar coordinates.
+  */
+  VectorXd ConvertFromCartesianToPolar(const VectorXd& cartesian, const VectorXd& polar_base);
+
+  /**
+  * Normalizes and angle
+  */
+  float NormalizeAngle(const float& angle, const float& base_angle);
 };
 
 #endif /* TOOLS_H_ */

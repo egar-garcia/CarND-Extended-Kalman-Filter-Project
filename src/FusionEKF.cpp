@@ -16,33 +16,26 @@ FusionEKF::FusionEKF() {
 
   previous_timestamp_ = 0;
 
-  // initializing matrices
-  R_laser_ = MatrixXd(2, 2);
-  R_laser_ << 0.0225, 0,
-              0, 0.0225;
+  // Setting the acceleration noise components
+  noise_ax_ = 9;
+  noise_ay_ = 9;
 
-  R_radar_ = MatrixXd(3, 3);
+  // Setting the measurement matrix H
+  ekf_.H_ = MatrixXd(2, 4);
+  ekf_.H_ << 1, 0, 0, 0,
+             0, 1, 0, 0;
 
-  H_laser_ = MatrixXd(2, 4);
-  H_laser_ << 1, 0, 0, 0,
-              0, 1, 0, 0;
+  // Setting the measurement covariance matrix R
+  // for laser and radar
+  ekf_.R_laser_ = MatrixXd(2, 2);
+  ekf_.R_laser_ << 0.0225, 0,
+                   0, 0.0225;
 
-  Hj_ = MatrixXd(3, 4);
+  ekf_.R_radar_ = MatrixXd(3, 3);
+  ekf_.R_radar_ << 0.09, 0, 0,
+                   0, 0.0009, 0,
+                   0, 0, 0.09;
 
-  //measurement covariance matrix - laser
-  R_laser_ << 0.0225, 0,
-        0, 0.0225;
-
-  //measurement covariance matrix - radar
-  R_radar_ << 0.09, 0, 0,
-        0, 0.0009, 0,
-        0, 0, 0.09;
-
-  /**
-  TODO:
-    * Finish initializing the FusionEKF.
-    * Set the process and measurement noises
-  */
   // The 4D state vector
   ekf_.x_ = VectorXd(4);
 
@@ -66,10 +59,6 @@ FusionEKF::FusionEKF() {
               0, 0, 0, 0,
               0, 0, 0, 0,
               0, 0, 0, 0;
-
-  // Setting the acceleration noise components
-	noise_ax_ = 9;
-	noise_ay_ = 9;
 }
 
 /**
@@ -78,7 +67,6 @@ FusionEKF::FusionEKF() {
 FusionEKF::~FusionEKF() {}
 
 void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
-
 
   /*****************************************************************************
    *  Initialization
@@ -99,7 +87,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       /**
       Convert radar from polar to cartesian coordinates and initialize state.
       */
-      VectorXd cartesian = tools.ConverFromPolarToCartesian(measurement_pack.raw_measurements_);
+      VectorXd cartesian = tools.ConvertFromPolarToCartesian(measurement_pack.raw_measurements_);
       cout << "** RADAR Measurement: " << endl; // TODO: Remove this egarg@
       ekf_.x_ << cartesian[0], cartesian[1], cartesian[2], cartesian[3];
     }
@@ -158,6 +146,11 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   ekf_.Predict();
 
+  // print the output // TODO: Remove this egarg@
+  cout << "** AFTER PREDICT" << endl;
+  cout << "x_ = " << endl << ekf_.x_ << endl;
+  cout << "P_ = " << endl << ekf_.P_ << endl;
+
   /*****************************************************************************
    *  Update
    ****************************************************************************/
@@ -170,27 +163,41 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     // Radar updates
-    cout << "** RADAR Measurement: " << endl; // TODO: Remove this egarg@
+    //cout << "** RADAR Measurement: " << endl; // TODO: Remove this egar@
     //VectorXd cartesian = tools.ConverFromPolarToCartesian(measurement_pack.raw_measurements_);
     //ekf_.x_ << cartesian[0], cartesian[1], cartesian[2], cartesian[3];
-    VectorXd cartesian = tools.ConverFromPolarToCartesian(measurement_pack.raw_measurements_);
-    VectorXd z(2);
-    z << cartesian[0], cartesian[1];
-    ekf_.H_ = H_laser_;
-    ekf_.R_ = R_laser_;
-    ekf_.Update(z);
+    //VectorXd cartesian = tools.ConvertFromPolarToCartesian(measurement_pack.raw_measurements_);
+    //VectorXd z(2);
+    //z << cartesian[0], cartesian[1];
+    //ekf_.H_ = H_laser_;
+    //ekf_.R_ = R_laser_;
+    //ekf_.Update(z);
+    VectorXd z(3);
+    z << measurement_pack.raw_measurements_[0],
+         measurement_pack.raw_measurements_[1],
+         measurement_pack.raw_measurements_[2];
+    cout << "** RADAR: ("<< z[0] << ", " << z[1] << ", " << z[2] << ")" << endl; // TODO: Remove this egarg@
+    //ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
+    //ekf_.R_ = R_radar_;
+    ekf_.UpdateEKF(z);
   } else {
     // Laser updates
-    cout << "** LASER Measurement: " << endl; // TODO: Remove this egarg@
+    //cout << "** LASER Measurement: " << endl; // TODO: Remove this egarg@
     //ekf_.x_ << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1], 0, 0;
     VectorXd z(2);
     z << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1];
-    ekf_.H_ = H_laser_;
-    ekf_.R_ = R_laser_;
+    cout << "** LASER: ("<< z[0] << ", " << z[1] << ")" << endl; // TODO: Remove this egarg@
+    //ekf_.H_ = H_laser_;
+    //ekf_.R_ = R_laser_;
     ekf_.Update(z);
   }
 
+  // print the output // TODO: Remove this egarg@
+  cout << "** AFTER UPDATE" << endl;
+  cout << "x_ = " << endl << ekf_.x_ << endl;
+  cout << "P_ = " << endl << ekf_.P_ << endl;
+
   // print the output
-  cout << "x_ = " << ekf_.x_ << endl;
-  cout << "P_ = " << ekf_.P_ << endl;
+  //cout << "x_ = " << ekf_.x_ << endl;
+  //cout << "P_ = " << ekf_.P_ << endl;
 }
