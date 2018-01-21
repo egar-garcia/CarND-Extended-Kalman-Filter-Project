@@ -10,40 +10,40 @@
 #include "tools.h"
 
 class FusionEKF {
-public:
-  /**
-  * Constructor.
-  */
-  FusionEKF();
+  public:
+    /**
+     * Constructor.
+     */
+    FusionEKF();
 
-  /**
-  * Destructor.
-  */
-  virtual ~FusionEKF();
+    /**
+     * Destructor.
+     */
+    virtual ~FusionEKF();
 
-  /**
-  * Runs the whole flow of the Kalman Filter from here.
-  */
-  void ProcessMeasurement(const MeasurementPackage &measurement_pack);
+    /**
+     * Runs the whole flow of the Kalman Filter from here.
+     */
+    void ProcessMeasurement(const MeasurementPackage &measurement_pack);
 
-  /**
-  * Kalman Filter update and prediction math lives in here.
-  */
-  KalmanFilter ekf_;
+    /**
+     * Kalman Filter update and prediction math lives in here.
+     */
+    KalmanFilter ekf_;
 
-private:
-  // Check whether the tracking toolbox was initialized or not (first measurement)
-  bool is_initialized_;
+  private:
+    // Check whether the tracking toolbox was initialized or not (first measurement)
+    bool is_initialized_;
 
-  // Previous timestamp
-  long long previous_timestamp_;
+    // Previous timestamp
+    long long previous_timestamp_;
 
-  // Tool object used to do conversions between polar and cartesian coorinates
-  Tools tools;
+    // Tool object used to do conversions between polar and cartesian coorinates
+    Tools tools;
 
-  // acceleration noise components
-  float noise_ax_;
-  float noise_ay_;
+    // acceleration noise components
+    float noise_ax_;
+    float noise_ay_;
 };
 
 #endif /* FusionEKF_H_ */
